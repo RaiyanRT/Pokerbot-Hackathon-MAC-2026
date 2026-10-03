@@ -13,6 +13,8 @@ Full SDK reference: https://docs.poker.monashcoding.com
 
 from macpoker import Bot
 
+from enum import IntEnum
+
 
 class OppData():
     def __init__(self, id: int):
@@ -21,9 +23,184 @@ class OppData():
         self.pfr = None #preflop raise % = preflop raise hands / total hands
         self.three_bet = None #reraise a preflop rase % = 3 bet opportunities taken / 3 bet opportunities
         self.show_down = None #how often do they make it to showdown after making it to flop = times in showdown / times in flop
-        self.show_down_win = None # how often do they win at showdown = win @ showdown / showdown 
+        self.show_down_win = None # how often do they win at showdown = win @ showdown / showdown
+        self.biggest_preflop_called = None # ratio multiplier representing the largest raise preflop that was by this player i.e. if pot was 2 and I bet 6 i.e. 3 times pot than = 3
+        self.biggest_preflop_raised = None # biggest preflop raise they made that someone called i.e. in prev example = 3
+        self.cbet = None # % of time they cbet after being aggressor preflop = 2 cbets / 2 pre flop raises = 100%
 
-from enum import IntEnum
+class myData():
+    def __init__(self):
+        self.pot_odds = None # equity I need for a call to be break-even over a large number of simulations = 30 in pot and 10 to call = 10 / 30 + 10 = 
+        #10 / 40 = 25% equity for the call to be breakeven. If I have less equity than this I should fold.
+
+#equity is based in 4 parts
+#preflop - flop - turn - river
+
+class CommunityData():
+
+    def __init__(self):
+        #cards
+        self.flop = None
+        self.turn = None
+        self.river = None
+
+        #suits
+        self.diamonds = None
+        self.hearts = None
+        self.clubs = None
+        self.spades = None
+
+        #straights
+        self.cards_to_straight = None
+        self.combinations_to_make_straight = None
+
+        #paired cards
+        self.pairs = None
+        self.trips = None
+        self.quads = None
+
+
+def transform_to_numbers(cards: list[str]): ### NOTE NOT TESTED YET
+    values = []
+    for card in cards:
+            if card[0] == ace and 1 not in values:
+                values.append(1)
+                values.append(14)
+            elif card[0] == king and 13 not in values:
+                values.append(13)
+            elif card[0] == queen and 12 not in values:
+                values.append(12)
+            elif card[0] == jack and 11 not in values:
+                values.append(11)
+            elif card[0] == ten and 10 not in values:
+                values.append(10)
+            else:
+                if int(card) not in values:
+                    values.append(int(card))
+
+    return values
+
+
+
+def cards_to_straight(cards: list[str]): ### NOTE NOT TESTED YET
+    """
+    calculates how many cards are the minimum to form a straight
+    also returns the range in which those cards must come from
+
+    calculate by checking each of the 11x 5-card windows starting from A-5 up to 10-A
+
+    returns the number of cards needed for a straight, the range, and the specific cards needed
+    #enumerates all possible cards for minimum distances to straights. If a larger straight can be formed (i.e. the board 2 3 4 6) then it 
+    should be enumerated so long as the number of cards required to form it is <=2
+    """
+
+    values = transform_to_numbers(cards)
+    values.sort() #sorted numbs
+    cards_to_straight = 5
+    missing_cards = []
+    starts = []
+    ends = []
+        # starting range of the straight
+    for i in range (1, 11):
+        offset = 4 # the end of the window
+        cap = i + offset
+        current = 0
+        for value in values:
+            if value <= cap:
+                current +=1
+
+        #if equal - there might be multiple straights possible so append multiple values
+        if current == cards_to_straight or current <= 2:
+            starts.append(i)
+            ends.append(i+offset)
+
+        #if less than - this is the minimum thus far so make new arrays
+        if current < cards_to_straight:
+                    cards_to_straight = current
+                    starts = [i]
+                    ends = [i+offset]
+
+    #find the specific cards that need to be there
+    for j in range(len(starts)):
+        for i in range(start, end+1):
+            if i not in values:
+                missing_cards[j].append[i]
+
+    return [cards_to_straight, starts, ends, missing_cards]
+
+
+#FLOP
+#I need to know - is paired? is straight connected? is suited?
+def board_stats(cards: list[str]): ### NOTE NOT TESTED YET
+    """
+    Tells me
+    - how many of each suit
+
+    
+    """
+    diamonds = 0
+    hearts = 0
+    clubs = 0
+    spades = 0 # diamonds, hearts, clubs, spades
+    flush_type = None #the type of the cards closest to a flush
+    flush_cards = 0 # the number of cards on the board with that type
+    cards_to_flush = 5
+
+    pairs = []
+    trips = []
+    quads = []
+
+    cards_to_straight = 0
+
+    #check suit types
+    for i in range(len(cards)):
+        if cards[i][1] == 'd':
+            diamonds +=1
+        elif cards[i][1] == 'h':
+            hearts +=1
+        elif cards[i][1] == 'c':
+            clubs +=1
+        elif cards[i][1] == 's':
+            spades +=1
+
+    #track what suit is most prominent
+    flush_type = 'd'
+    flush_cards = diamonds
+    if hearts > flush_cards:
+        flush_type = 'h'
+        flush_cards = hearts
+    if spades > flush_cards:
+        flush_type = 's'
+        flush_cards = spades
+    if clubs > flush_cards:
+        flush_type = 'c'
+        flush_cards = clubs
+    cards_to_flush = cards_to_flush - flush_cards # 5 - how many of the most prominent suit are on the board
+
+
+    #track pairs, trips, quads
+    seen = []
+    for i in range(len(cards))-1:
+        for j in range(i, len(cards)-1):
+            counter = 0
+            if cards[i][0] not in seen and (cards[i][0] == cards[j][0]):
+                counter +=1
+
+        if counter == 1:
+            pairs.append(cards[i][0])
+
+        elif counter == 2:
+            trips.append(cards[i][0])
+
+        elif counter == 3:
+            quads.append(cards[i][0])
+        
+        seen.append(cards[i][0]) # ensure uniqueness
+
+    #cards to straight
+    straight_result = cards_to_straight(cards)
+
+
 class PreflopTier(IntEnum):
     Premium = 1 # Tier 1: Strong Pockets (AA - QQ) + AK 
     Strong = 2 # Mid Pockets (JJ - 88) + AQ AJ AT
@@ -68,6 +245,9 @@ def diff(c1: str, c2:str):
             values.append(int(card[0]))
 
     return abs(values[0]-values[1])
+
+
+
 
 def classifyPreflop(c1: str, c2: str):
     """takes starter hand and puts it in one of the following buckets. 
@@ -131,7 +311,7 @@ def classifyPreflop(c1: str, c2: str):
     
     #T10 suited garbage
     elif (c1[1] == c2[1]):
-        return PreflopTier.Suited_Garbage\
+        return PreflopTier.Suited_Garbage
 
     #T11Garbage
     else: 
