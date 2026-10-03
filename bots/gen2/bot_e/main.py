@@ -1,4 +1,5 @@
 """Cartographer: a range-mapping, expected-value poker bot.
+Claude Opus 5.5
 Unopened pots preflop use a position chart that widens or tightens with how
 often the players still to act have folded to raises this game; every other
 decision weights each live opponent's range from their actions this hand and
