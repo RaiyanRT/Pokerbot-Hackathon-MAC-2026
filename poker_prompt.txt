@@ -1,0 +1,71 @@
+#this was the prompt used to generate responses from default claude, gpt, kimi, qwen and deepseek models.
+
+Context:
+You are being challenged to overcome and out-predict other ai models
+to solve a modified poker game. 
+
+Rules:
+5-6 players per hand
+1/2 sb / bb no antes NL Holdem
+
+Mini-round - 1 set of 2 starter cards and 5 community cards
+round - 5-6 rotations of those starter cards w the same community cards
+game - 20ish iterations of a round with the same players
+stage - 4 stages of games in which
+
+Once a "round" of 5 community cards and 5-6x 2 starter
+cards are delt, the round will play as usual. Then, without memory of the
+previous hand, the players will rotate around the table and be given
+the hand of the player adjacent to them 5-6 times until everyone has simulated
+a given hand against all others hands for the same community cards.
+This process will happen about 20 times for a total of 100 mini-rounds.
+IMPORTANT: Stacks reset at the end of every mini round across the 100 rounds of a game.
+
+
+Scoring metric:
+Within a Game with the same players you want the largest +- token
+differential. The first place gets 5 points, 2nd gets 4, 3rd gets 3,
+4th gets 2, 5th gets 1, 6th gets 0.
+
+The goal is to have the highest total points at the end of the last (4th)
+stage. So if you came first in each of your games you would get 20 points.
+Be aware: the actual number of simulations may change and is likely to do so
+such that in total 2-4k individual minirounds are played.
+
+The first stage of players placements on tables is random.
+From the second to 4th stages, points are totaled at the end of every round
+and tables are configured such that you vs players of similar point totals i.e.
+if you win you vs harder / luckier opponents and if you lose you  vs worse opponents.
+
+
+Information Available:
+You have access to everything you expect you would. Ask if you are unsure.
+I.e. a unique ID for a player within your stage. However, this does not carry
+across stages.
+
+Constraints:
+- no api calls, multithreading or computing on others turns
+you only get a 30 static window + 0.1 sec per miniround (so probably 40ish seconds for 100 
+minirounds total) to perform all calculations and actions.
+Exceeding this leads to checkfolding i.e. a very bad performance.
+
+- can only use numpy and python standard library
+
+
+
+Objectives:
+
+1. to anticipate what other teams will do, especially how they are likely to use AI 
+and the likely behaviour of their ai-generated / supported approaches
+2. to anticipate hence what other teams are unlikely to do? What will they miss? Especially
+if they use LLM models.
+3. What problems or weaknesses can we exploit for ai gneerated / supported models under these constraints? 
+In particular, what models have specific strengths and weaknesses. How can we avoid these for our model and identify them in others.
+
+
+The code will be written in python but for now no code. Just theory and research. Documentaiton.
+
+Think long and hard about the prompt. Ask for questions or clarificaitons. Refine your answer because I dont need fluff.
+Then refine it again. And for the love of god. NO SYCOPHANCY. We are here to win. Not to be nice.
+
+Refine your answer once more. Then deliver. I expect a back and forth or a very refined answer.
