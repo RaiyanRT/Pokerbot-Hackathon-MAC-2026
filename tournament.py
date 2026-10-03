@@ -22,7 +22,9 @@ import csv
 import glob
 import os
 import random
+import re
 import shutil
+import tempfile
 from dataclasses import replace
 
 from macpoker.bots import BUILTINS
@@ -78,16 +80,18 @@ def main():
     args = p.parse_args()
     if args.rounds < 1 or args.deals < 1:
         p.error("--rounds and --deals must be at least 1")
+    if not re.fullmatch(r"[A-Za-z0-9_-]+", args.gen):
+        p.error("gen must contain only letters, numbers, hyphens and underscores")
 
     # ponytail: in-process mode can't interrupt an infinite loop and shares sys.modules
     # between bots (two bots with a helper of the same filename clash); use --subprocess for both.
     cands = sorted(glob.glob(f"bots/{args.gen}/*/main.py"))
     if not cands:
         raise SystemExit(f"no bots in bots/{args.gen}/*/main.py")
-    if len(cands) > 9:
-        raise SystemExit("the candidates' table holds at most 9 bots")
+    if len(cands) != 5:
+        raise SystemExit("a generation needs exactly 5 candidates")
     # this gen's old champion (from an earlier --crown) must not judge its own generation
-    old = glob.glob(f"hall_of_fame/{args.gen}_*")
+    old = [path for path in glob.glob(f"hall_of_fame/{args.gen}_*") if os.path.isdir(path)]
     ref_pool = [h for h in sorted(glob.glob("hall_of_fame/*/main.py")) if os.path.dirname(h) not in old] + HOUSE
     rng = random.Random(args.seed)
 
@@ -150,12 +154,27 @@ def main():
         print("WARNING: exact tie for first; champion picked alphabetically.")
     print(f"champion: {champ['bot']} ({champ['model']})")
     if args.crown:
-        # copy first, then swap out the old entry, so a failure never leaves the gen without a champion
         dst = f"hall_of_fame/{args.gen}_{os.path.basename(champ['bot'])}"
-        shutil.copytree(champ["bot"], dst + ".new", dirs_exist_ok=True)
-        for o in old:
-            shutil.rmtree(o)
-        os.replace(dst + ".new", dst)
+        os.makedirs("hall_of_fame", exist_ok=True)
+        staging = tempfile.mkdtemp(prefix=".crown-", dir="hall_of_fame")
+        moved = []
+        crowned = False
+        try:
+            incoming = os.path.join(staging, "incoming")
+            shutil.copytree(champ["bot"], incoming)
+            for i, path in enumerate(old):
+                backup = os.path.join(staging, f"old-{i}")
+                os.replace(path, backup)
+                moved.append((backup, path))
+            os.replace(incoming, dst)
+            crowned = True
+        except Exception:
+            for backup, path in reversed(moved):
+                os.replace(backup, path)
+            raise
+        finally:
+            if crowned or not any(os.path.exists(backup) for backup, _ in moved):
+                shutil.rmtree(staging)
         print(f"crowned -> {dst}")
 
 
