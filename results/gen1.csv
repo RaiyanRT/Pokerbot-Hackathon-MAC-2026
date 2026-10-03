@@ -1,0 +1,6 @@
+gen,bot,model,avg_placement,avg_game_points,league_mbb,house_mbb,ms_per_hand,verdicts
+gen1,bots/gen1/bot_b,Claude Opus 5.5,4.562,19.625,5283.2,12135.0,7.18,OK
+gen1,bots/gen1/bot_a,GPT6 Astra,4.375,19.55,5501.6,14047.0,6.36,OK
+gen1,bots/gen1/bot_d,Qwen 3.8 Max,4.062,18.125,4867.2,11914.0,22.47,OK
+gen1,bots/gen1/bot_e,GLM 5.3 Flagship,3.438,16.3,2473.6,5069.0,5.94,OK
+gen1,bots/gen1/bot_c,Deepseek V3,3.163,15.5,3821.6,7280.0,1.09,OK
