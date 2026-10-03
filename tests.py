@@ -1,4 +1,4 @@
-from main import PreflopTier, classifyPreflop
+from old import PreflopTier, classifyPreflop
 
 ##TEST 1 - checking the accuracy of the preflop tier assignment
 

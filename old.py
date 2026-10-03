@@ -1,5 +1,3 @@
-##claude sonnet 5.5
-
 """Your tournament bot. Keep this file named main.py.
 
 Test it locally:
@@ -16,7 +14,6 @@ Full SDK reference: https://docs.poker.monashcoding.com
 from macpoker import Bot
 
 from enum import IntEnum
-from collections import Counter
 
 
 class OppData():
@@ -63,56 +60,145 @@ class CommunityData():
         self.quads = None
 
 
-RANK_VALUE = {'2': 2, '3': 3, '4': 4, '5': 5, '6': 6, '7': 7, '8': 8,
-              '9': 9, 'T': 10, 'J': 11, 'K': 13, 'Q': 12, 'A': 14}
-
-
-def transform_to_numbers(cards: list[str]):
-    """distinct rank values, sorted. Ace contributes both 1 and 14."""
-    values = set()
+def transform_to_numbers(cards: list[str]): ### NOTE NOT TESTED YET
+    values = []
     for card in cards:
-        v = RANK_VALUE[card[0]]
-        values.add(v)
-        if v == 14:
-            values.add(1)
-    return sorted(values)
+            if card[0] == ace and 1 not in values:
+                values.append(1)
+                values.append(14)
+            elif card[0] == king and 13 not in values:
+                values.append(13)
+            elif card[0] == queen and 12 not in values:
+                values.append(12)
+            elif card[0] == jack and 11 not in values:
+                values.append(11)
+            elif card[0] == ten and 10 not in values:
+                values.append(10)
+            else:
+                if int(card) not in values:
+                    values.append(int(card))
+
+    return values
 
 
-def cards_to_straight(cards: list[str]):
+
+def cards_to_straight(cards: list[str]): ### NOTE NOT TESTED YET
     """
-    Checks the 10 five-card windows (A-5 ... T-A; ace = 1 or 14).
-    Returns (min_needed, windows) where windows = [(needed, start, missing_values)]
-    for every window with needed == min_needed or needed <= 2.
-    missing value 1 means an ace.
+    calculates how many cards are the minimum to form a straight
+    also returns the range in which those cards must come from
+
+    calculate by checking each of the 11x 5-card windows starting from A-5 up to 10-A
+
+    returns the number of cards needed for a straight, the range, and the specific cards needed
+    #enumerates all possible cards for minimum distances to straights. If a larger straight can be formed (i.e. the board 2 3 4 6) then it 
+    should be enumerated so long as the number of cards required to form it is <=2
     """
-    values = set(transform_to_numbers(cards))
-    windows = []
-    for start in range(1, 11):
-        window = set(range(start, start + 5))
-        missing = sorted(window - values)
-        windows.append((len(missing), start, missing))
-    best = min(w[0] for w in windows)
-    keep = [w for w in windows if w[0] == best or w[0] <= 2]
-    return best, keep
+
+    values = transform_to_numbers(cards)
+    values.sort() #sorted numbs
+    cards_to_straight = 5
+    missing_cards = []
+    starts = []
+    ends = []
+        # starting range of the straight
+    for i in range (1, 11):
+        offset = 4 # the end of the window
+        cap = i + offset
+        current = 0
+        for value in values:
+            if value <= cap:
+                current +=1
+
+        #if equal - there might be multiple straights possible so append multiple values
+        if current == cards_to_straight or current <= 2:
+            starts.append(i)
+            ends.append(i+offset)
+
+        #if less than - this is the minimum thus far so make new arrays
+        if current < cards_to_straight:
+                    cards_to_straight = current
+                    starts = [i]
+                    ends = [i+offset]
+
+    #find the specific cards that need to be there
+    for j in range(len(starts)):
+        for i in range(start, end+1):
+            if i not in values:
+                missing_cards[j].append[i]
+
+    return [cards_to_straight, starts, ends, missing_cards]
 
 
-def board_stats(cards: list[str]):
-    """board-only texture: flush, pairs/trips/quads, straight proximity."""
-    suits = Counter(c[1] for c in cards)
-    ranks = Counter(c[0] for c in cards)
-    if suits:
-        flush_suit, flush_cards = max(suits.items(), key=lambda kv: kv[1])
-    else:
-        flush_suit, flush_cards = None, 0
-    return {
-        "flush_suit": flush_suit,
-        "flush_cards": flush_cards,
-        "cards_to_flush": 5 - flush_cards,
-        "pairs": [r for r, n in ranks.items() if n == 2],
-        "trips": [r for r, n in ranks.items() if n == 3],
-        "quads": [r for r, n in ranks.items() if n == 4],
-        "straight": cards_to_straight(cards),
-    }
+#FLOP
+#I need to know - is paired? is straight connected? is suited?
+def board_stats(cards: list[str]): ### NOTE NOT TESTED YET
+    """
+    Tells me
+    - how many of each suit
+
+    
+    """
+    diamonds = 0
+    hearts = 0
+    clubs = 0
+    spades = 0 # diamonds, hearts, clubs, spades
+    flush_type = None #the type of the cards closest to a flush
+    flush_cards = 0 # the number of cards on the board with that type
+    cards_to_flush = 5
+
+    pairs = []
+    trips = []
+    quads = []
+
+    cards_to_straight = 0
+
+    #check suit types
+    for i in range(len(cards)):
+        if cards[i][1] == 'd':
+            diamonds +=1
+        elif cards[i][1] == 'h':
+            hearts +=1
+        elif cards[i][1] == 'c':
+            clubs +=1
+        elif cards[i][1] == 's':
+            spades +=1
+
+    #track what suit is most prominent
+    flush_type = 'd'
+    flush_cards = diamonds
+    if hearts > flush_cards:
+        flush_type = 'h'
+        flush_cards = hearts
+    if spades > flush_cards:
+        flush_type = 's'
+        flush_cards = spades
+    if clubs > flush_cards:
+        flush_type = 'c'
+        flush_cards = clubs
+    cards_to_flush = cards_to_flush - flush_cards # 5 - how many of the most prominent suit are on the board
+
+
+    #track pairs, trips, quads
+    seen = []
+    for i in range(len(cards))-1:
+        for j in range(i, len(cards)-1):
+            counter = 0
+            if cards[i][0] not in seen and (cards[i][0] == cards[j][0]):
+                counter +=1
+
+        if counter == 1:
+            pairs.append(cards[i][0])
+
+        elif counter == 2:
+            trips.append(cards[i][0])
+
+        elif counter == 3:
+            quads.append(cards[i][0])
+        
+        seen.append(cards[i][0]) # ensure uniqueness
+
+    #cards to straight
+    straight_result = cards_to_straight(cards)
 
 
 class PreflopTier(IntEnum):
@@ -192,7 +278,7 @@ def classifyPreflop(c1: str, c2: str):
             return PreflopTier.Weak_Pockets
 
     #T1 AK Edge Case    
-    elif c1[0] in (ace, king) and c2[0] in (ace, king):
+    elif (c1[0] is ace or c1[0] is king) and (c2[0] is ace or c2[1] is king):
         return PreflopTier.Premium 
 
     #T2 AQ AJ AT Edge Cases
@@ -200,7 +286,7 @@ def classifyPreflop(c1: str, c2: str):
         return PreflopTier.Strong
 
     #T3 Suited Aces: 
-    elif ((c1[0] == ace or c2[0] == ace) and c1[1] == c2[1]):
+    elif ((c1[0] is ace or c2[0] is ace) and c1[1] == c2[1]):
         return PreflopTier.Suited_Aces
 
     #T5 suited high cards 
@@ -216,7 +302,7 @@ def classifyPreflop(c1: str, c2: str):
         return PreflopTier.Suited_Connectors
     
     #T8 offsuit aces:
-    elif ((c1[0] == ace or c2[0] == ace) and c1[1] != c2[1]):
+    elif ((c1[0] is ace or c2[0] is ace) and c1[1] != c2[1]):
         return PreflopTier.Offsuit_Ace
 
     #T9 High suited one gaps:
@@ -237,8 +323,7 @@ def classifyPreflop(c1: str, c2: str):
 
 class MyBot(Bot):
     def act(self, state):
-        if not hasattr(self, 'opponents'):
-            self.opponents = {}  # keyed by player id; create OppData lazily
+        self.opponents = [OppData(x) for x in range(6)]
 
         
         # What you can see:
@@ -265,3 +350,5 @@ class MyBot(Bot):
             return state.call()
         
         return state.fold()
+
+
