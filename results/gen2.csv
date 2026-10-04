@@ -1,0 +1,6 @@
+gen,bot,model,avg_placement,avg_game_points,league_mbb,house_mbb,ms_per_hand,verdicts
+gen2,bots/gen2/bot_c,Qwen,4.1,18.85,4527.3,10913.0,10.53,OK
+gen2,bots/gen2/bot_b,Opus 5.5,4.075,18.887,4639.3,6788.0,9.19,OK
+gen2,bots/gen2/bot_e,old_champ,3.975,18.475,4208.8,6270.0,10.71,OK
+gen2,bots/gen2/bot_a,Astra,3.487,17.15,3448.1,8725.0,9.38,OK
+gen2,bots/gen2/bot_d,GLM,2.05,11.55,-3786.4,4800.0,26.08,OK

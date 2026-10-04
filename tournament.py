@@ -5,7 +5,8 @@
 Every candidate in bots/<gen>/*/main.py faces the same tests. Each round has:
   * the candidates' table: all candidates at one table (duplicate deals, so fair)
   * a reference table: each candidate vs the same 4 opponents, same seats, same
-    seed, drawn from hall_of_fame/*/main.py (minus this gen's old champion) + house bots.
+    seed, drawn from hall_of_fame/*/main.py (minus this gen's old champion),
+    baselines/*/main.py (fixed bots of varied styles) and the house bots.
 Plus one fixed table vs the 4 house bots (house_mbb), a yardstick only.
 
 Each table is a duplicate set scored like the tournament
@@ -92,7 +93,8 @@ def main():
         raise SystemExit("a generation needs exactly 5 candidates")
     # this gen's old champion (from an earlier --crown) must not judge its own generation
     old = [path for path in glob.glob(f"hall_of_fame/{args.gen}_*") if os.path.isdir(path)]
-    ref_pool = [h for h in sorted(glob.glob("hall_of_fame/*/main.py")) if os.path.dirname(h) not in old] + HOUSE
+    ref_pool = [h for h in sorted(glob.glob("hall_of_fame/*/main.py")) if os.path.dirname(h) not in old]
+    ref_pool += sorted(glob.glob("baselines/*/main.py")) + HOUSE  # fixed, varied styles so the field isn't one family
     rng = random.Random(args.seed)
 
     stats = [{"place": [], "gp": [], "chips": 0, "hands": 0, "bad": set(), "ms": 0.0} for _ in cands]
